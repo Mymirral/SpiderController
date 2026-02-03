@@ -221,7 +221,7 @@ Transform:
   m_GameObject: {fileID: 245569517}
   serializedVersion: 2
   m_LocalRotation: {x: -0.07642119, y: -0.82819074, z: 0.11653157, w: -0.5428447}
-  m_LocalPosition: {x: -2.042, y: 0.35, z: -0.967}
+  m_LocalPosition: {x: -1.701, y: 0.068, z: -1.011}
   m_LocalScale: {x: 0.098439, y: 0.098439, z: 0.098439}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4202,11 +4202,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   joints:
-  - {fileID: 3794972730983023828}
   - {fileID: 7993597278475764269}
   - {fileID: 96899026113820025}
   - {fileID: 4468340912782142409}
-  - {fileID: 4196132947012390115}
+  - {fileID: 4543132462061844919}
   IKTarget: {fileID: 245569521}
   origin: {x: 0, y: 0, z: 0}
   distances: []
