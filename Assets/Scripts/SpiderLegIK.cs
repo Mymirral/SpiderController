@@ -1,9 +1,6 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using MirralLogger.Runtime.Core;
 using MirralLogger.Runtime.Model;
-using Unity.Collections;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -44,12 +41,13 @@ public class SpiderLegIK : MonoBehaviour
     {
         IK();
         ApplyPos();
+        ApplyRot();
     }
 
     private void IK()
     {
-        origin = joints[0].transform.position;  
-        
+        origin = joints[0].transform.position;
+
         for (int time = 0; time < 5; time++)
         {
             pos[^1] = IKTarget.position;
@@ -73,12 +71,20 @@ public class SpiderLegIK : MonoBehaviour
             }
         }
     }
-    
+
     private void ApplyPos()
     {
         for (int i = 0; i < joints.Count; i++)
         {
             joints[i].position = pos[i];
+        }
+    }
+
+    private void ApplyRot()
+    {
+        for (int i = 0; i < joints.Count - 1; i++)
+        {
+            joints[i].rotation = Quaternion.LookRotation(joints[i + 1].position - joints[i].position);
         }
     }
 }
