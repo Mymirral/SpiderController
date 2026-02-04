@@ -1,7 +1,9 @@
 using System.Collections.Generic;
+using System.Linq;
 using MirralLogger.Runtime.Core;
 using MirralLogger.Runtime.Model;
 using UnityEngine;
+using UnityEngine.Animations;
 using UnityEngine.Serialization;
 
 public class SpiderLegIK : MonoBehaviour
@@ -13,28 +15,52 @@ public class SpiderLegIK : MonoBehaviour
     [SerializeField] private Vector3 origin;
     [SerializeField] private float[] distances;
 
+    //旋转相关
+    [SerializeField] private Vector3[] localForwards;
+    [SerializeField] private Vector3[] localUps;
+    
     [FormerlySerializedAs("oldPos")] [SerializeField]
     private Vector3[] pos;
+    
+    private bool initialized = false;
 
     private void Start()
     {
         if (joints.Count == 0)
         {
             MLogger.Log("未设置节点！", LogLevel.Warning, LogCategory.Animation, this);
+            return;
         }
 
+        if (!IKTarget)
+        {
+            MLogger.Log("没有设置IK 目标对象",LogLevel.Error,LogCategory.Animation,this);
+            return;
+        }
+        
         distances = new float[joints.Count - 1];
         pos = new Vector3[joints.Count];
-
+        
+        localForwards = new Vector3[joints.Count];
+        localUps = new Vector3[joints.Count];
+        
         //记录根节点
         origin = joints[0].transform.position;
 
         //计算每一段固定距离
         for (int i = 0; i < distances.Length; i++)
         {
-            distances[i] = (joints[i + 1].position - joints[i].position).magnitude;
+            var jointVector = joints[i + 1].position - joints[i].position;
+            distances[i] = jointVector.magnitude;
             pos[i] = joints[i].position;
+            
+            //记录初始旋转,将每一小节的世界坐标向量转到父关节的本地坐标空间，作为参考前向量
+            localForwards[i] = joints[i].InverseTransformDirection(jointVector.normalized);
+            localUps[i] = joints[i].InverseTransformDirection(joints[i].up);
         }
+        pos[^1] = joints[^1].position;
+        
+        initialized = true;
     }
 
     private void LateUpdate()
@@ -44,8 +70,11 @@ public class SpiderLegIK : MonoBehaviour
         ApplyRot();
     }
 
+    //迭代解算每个节点应该在哪
     private void IK()
     {
+        if (!initialized)  return;
+        
         origin = joints[0].transform.position;
 
         for (int time = 0; time < 5; time++)
@@ -84,7 +113,22 @@ public class SpiderLegIK : MonoBehaviour
     {
         for (int i = 0; i < joints.Count - 1; i++)
         {
-            joints[i].rotation = Quaternion.LookRotation(joints[i + 1].position - joints[i].position);
+            //当前应该指向的世界方向
+            var targetDir = Vector3.Normalize(pos[i + 1] - pos[i]);
+            
+            //拿到目前的本地forward在世界坐标的方向
+            var currentForward = joints[i].TransformDirection(localForwards[i]);
+            
+            //旋转差
+            var delta = Quaternion.FromToRotation(currentForward, targetDir);
+            
+            //增加极向量，使得所有关节不会乱拧
+            joints[i].rotation = Quaternion.LookRotation(
+                targetDir,
+                joints[i].TransformDirection(localUps[i])
+            );
+            
+            joints[i].rotation = delta * joints[i].rotation;
         }
     }
 }
